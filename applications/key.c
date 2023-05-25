@@ -24,7 +24,7 @@
 //#include "factory.h"
 
 #define DBG_TAG "key"
-#define DBG_LVL DBG_INFO
+#define DBG_LVL DBG_LOG
 #include <rtdbg.h>
 
 rt_thread_t key_response_t = RT_NULL;
@@ -59,6 +59,7 @@ extern uint8_t Last_Close_Flag;
 void Key_Reponse_Callback(void *parameter)
 {
     Key_SemInit();
+    int RF_counter = 0;
     while (1)
     {
         K0_Status = rt_sem_take(KEY2_ON_Sem, 0);
@@ -320,6 +321,17 @@ void Key_Reponse_Callback(void *parameter)
         }
         else if (K0_Long_Status == RT_EOK) //ON
         {
+            LOG_W("Now KEY ON LONG PRESS\r\n");
+            beep_once();
+            if (Get_RF_Exant() == 0)
+            {
+                RF_Switch_Outside_Pin_Init();
+            }
+            else
+            {
+                RF_Switch_Inside_Pin_Init();
+            }
+            RF_counter++;
         }
         else if (K1_Long_Status == RT_EOK) //OFF
         {

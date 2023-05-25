@@ -29,7 +29,7 @@ DMA_HandleTypeDef dma_handle;
 rt_thread_t ntc_work = RT_NULL;
 
 uint8_t NTC_State = 0;
-uint32_t adc_value[10];
+uint32_t adc_value[20];
 
 static void MX_ADC_Init(void)
 {
@@ -114,18 +114,14 @@ double ADC_Voltage_Calc(void)
 {
     uint32_t voltage_temp = 0;
     double real_voltage = 0;
-    double num = 3.14159;
 
-    //LOG_D("The value of num is %f\n", num);
-
-    for (uint8_t i = 0; i < 10; i++)
+    for (uint8_t i = 0; i < 20; i++)
     {
         voltage_temp += adc_value[i];
-        LOG_D("The value of num is %d\n", adc_value[i]);
     }
     real_voltage = voltage_temp * 0.000040283203125 + 0.018;
 
-    LOG_D("The value of num is %f\n", real_voltage);
+    //LOG_D("The value of voltage is %f\n", real_voltage);
     return real_voltage;
 }
 
@@ -143,19 +139,6 @@ void NTC_Work_Callback(void *parameter)
     while (1)
     {
         ADC_Voltage_Calc();
-//        LOG_I("电容 = %d\r\t", adc_value[0]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
-//        LOG_I("电容 = %d\r\t", adc_value[2]);       //电容
 
 //        if(ADC_Voltage_Calc()<1.153 && GetNowStatus()!=NTCWarning)
 //        {
@@ -175,7 +158,7 @@ void NTC_Work_Callback(void *parameter)
 //                Moto_Close(NormalOff);
 //            }
 //        }
-        rt_thread_mdelay(3000);
+        rt_thread_mdelay(1000);
     }
 }
 
@@ -183,7 +166,7 @@ void ADC_Init(void)
 {
     MX_DMA_Init();
     MX_ADC_Init();
-    HAL_ADC_Start_DMA(&adc_handle, (uint32_t*) adc_value, 10);
+    HAL_ADC_Start_DMA(&adc_handle, (uint32_t*) adc_value, 20);
     ntc_work = rt_thread_create("ntc_work", NTC_Work_Callback, RT_NULL, 2048, 15, 10);
     rt_thread_startup(ntc_work);
 }

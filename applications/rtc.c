@@ -34,19 +34,19 @@ void RTC_Timer_Entry(void *parameter)
         result = rt_sem_take(RTC_IRQ_Sem, RT_WAITING_FOREVER);
         if (result == RT_EOK)
         {
-//            if(RTC_Hours%120==0)
-//            {
-//                //Moto_Detect();
-//            }
+            if(RTC_Hours%120==0)
+            {
+                //Moto_Detect();
+            }
             if(RTC_Counter<24)
             {
-//                Update_All_Time();//24小时更新全部时间
+                Update_All_Time();//24小时更新全部时间
                 RTC_Counter++;
             }
             else
             {
-//                Update_All_Time();//24小时更新全部时间
-//                Detect_All_Time();//25个小时检测计数器
+                Update_All_Time();//24小时更新全部时间
+                Detect_All_Time();//25个小时检测计数器
                 RTC_Counter=0;
             }
             LOG_D("Device RTC Detect,Hour is %d\r\n",RTC_Counter);

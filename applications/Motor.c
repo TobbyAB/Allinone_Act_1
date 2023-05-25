@@ -45,12 +45,14 @@ uint8_t Valve_Alarm_Flag;
 extern uint8_t ValveStatus;
 extern enum Device_Status Now_Status;
 extern Device_Info Global_Device;
+extern uint8_t Last_Close_Flag;
 
 void ON_Pos_Detect_Timer_Callback(void *parameter)
 {
     if (rt_pin_read(ON_POS) == 0)
     {
         LOG_I("The motor in the ON position");
+        led_moto_fail_stop();
         //rt_thread_mdelay(500);
         Actuator_Stop();
     }
@@ -61,6 +63,7 @@ void OFF_Pos_Detect_Timer_Callback(void *parameter)
     if (rt_pin_read(OFF_POS) == 0)
     {
         LOG_I("The motor in the OFF position");
+        led_moto_fail_stop();
         //rt_thread_mdelay(500);
         Actuator_Stop();
     }
@@ -71,6 +74,8 @@ void In_ON_Pos_Detect_Timer_Callback(void *parameter)
     if (rt_pin_read(ON_POS) == 1)
     {
         Motor_Stop();
+        Now_Status = Close;
+        led_moto_fail_start();
         rt_timer_stop(ON_Pos_Detect_Timer);
         LOG_W("he motor has not reached the ON position");
     }
@@ -81,6 +86,8 @@ void In_OFF_Pos_Detect_Timer_Callback(void *parameter)
     if (rt_pin_read(OFF_POS) == 1)
     {
         Motor_Stop();
+        Now_Status = Open;
+        led_moto_fail_start();
         rt_timer_stop(OFF_Pos_Detect_Timer);
         LOG_W("he motor has not reached the OFF position");
     }
@@ -143,27 +150,27 @@ void Moto_Init(void)
             6000,
             RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 
-    In_ON_Pos_Detect_Timer = rt_timer_create("In_ON_Pos_Detect_Timer", In_ON_Pos_Detect_Timer_Callback, RT_NULL, 30000,
+    In_ON_Pos_Detect_Timer = rt_timer_create("In_ON_Pos_Detect_Timer", In_ON_Pos_Detect_Timer_Callback, RT_NULL, 20000,
     RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 
     In_OFF_Pos_Detect_Timer = rt_timer_create("In_OFF_Pos_Detect_Timer", In_OFF_Pos_Detect_Timer_Callback, RT_NULL,
-            30000,
+            20000,
             RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 
     Moto_Detect_Timer = rt_timer_create("Moto_Detect", Moto_Detect_Timer_Callback, RT_NULL, 60 * 1000 * 5,
     RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 
-//    if (Flash_Get_SlaveAlarmFlag())
-//    {
-//        Warning_Enable_Num(2);
-//        LOG_I("Moto is Init Fail,Last is Slaver Alarm\r\n");
-//        return;
-//    }
-//    if (Global_Device.LastFlag != OtherOff)
-//    {
-//        Moto_InitOpen(NormalOpen);
-//    }
-//    LOG_D("Moto is Init Success,Flag is %d\r\n", Global_Device.LastFlag);
+    if (Flash_Get_SlaveAlarmFlag())
+    {
+        Warning_Enable_Num(2);
+        LOG_I("Moto is Init Fail,Last is Slaver Alarm\r\n");
+        return;
+    }
+    if (Global_Device.LastFlag != OtherOff)
+    {
+        Moto_InitOpen(NormalOpen);
+    }
+    LOG_D("Moto is Init Success,Flag is %d\r\n", Global_Device.LastFlag);
 }
 
 void Moto_Detect(void)
@@ -194,15 +201,23 @@ void Motor_Close(void)
 {
     rt_pin_write(MOT_IN1, 1);
     rt_pin_write(MOT_IN2, 0);
-//LOG_D("Now Motor start to close");
 }
 
 void Motor_Stop(void)
 {
     rt_pin_write(MOT_IN1, 0);
     rt_pin_write(MOT_IN2, 0);
-//LOG_D("Now Motor is stop");
+    LOG_D("Now Motor start to Stop");
 }
+MSH_CMD_EXPORT(Motor_Stop, Motor_Stop);
+
+void Motor_Pluse(void)
+{
+    rt_pin_write(MOT_IN1, 1);
+    rt_pin_write(MOT_IN2, 1);
+LOG_D("Now Motor start to Pluse");
+}
+MSH_CMD_EXPORT(Motor_Pluse, Motor_Pluse);
 
 void Clean_Actuator_Timer(void)
 {
@@ -221,7 +236,6 @@ void Actuator_Open(void)
     rt_timer_start(In_ON_Pos_Detect_Timer);
     LOG_I("Now Actuator command to open");
 }
-MSH_CMD_EXPORT(Actuator_Open, Actuator_Open);
 
 void Actuator_Close(void)
 {
@@ -231,7 +245,6 @@ void Actuator_Close(void)
     rt_timer_start(In_OFF_Pos_Detect_Timer);
     LOG_I("Now Actuator command to close");
 }
-MSH_CMD_EXPORT(Actuator_Close, Actuator_Close);
 
 void Actuator_Stop(void)
 {
@@ -239,7 +252,6 @@ void Actuator_Stop(void)
     Motor_Stop();
     LOG_I("Now Actuator is stop");
 }
-MSH_CMD_EXPORT(Actuator_Stop, Actuator_Stop);
 
 void Actuator_Aging(void)
 {
@@ -248,7 +260,6 @@ void Actuator_Aging(void)
     Actuator_Close();
     rt_thread_mdelay(14000);
 }
-MSH_CMD_EXPORT(Actuator_Aging, Actuator_Aging);
 
 /*******************
  Actuator_Open
@@ -309,7 +320,6 @@ void Moto_Open(uint8_t ActFlag)
         LOG_D("No permissions to Open\r\n");
     }
 }
-MSH_CMD_EXPORT(Moto_Open, Moto_Open);
 
 void Moto_Close(uint8_t ActFlag)
 {
@@ -346,7 +356,6 @@ void Moto_Close(uint8_t ActFlag)
         LOG_D("No permissions to Off\r\n");
     }
 }
-MSH_CMD_EXPORT(Moto_Close, Moto_Close);
 
 uint8_t Get_Moto1_Fail_FLag(void)
 {

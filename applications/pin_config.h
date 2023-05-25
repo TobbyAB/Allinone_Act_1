@@ -27,7 +27,7 @@
 #define ANT_EXT         8   //PA8
 #define ANT_INT         9   //PA9
 
-#define HAND_SWITCH     1   //PA1
+#define HAND_SWITCH_DET 1   //PA1
 #define LED_DATAT       0   //PA0
 
 #define BUZZER          24   //PB8

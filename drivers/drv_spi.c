@@ -374,6 +374,8 @@ static rt_uint32_t spixfer(struct rt_spi_device *device, struct rt_spi_message *
         if (state != HAL_OK)
         {
             LOG_I("spi transfer error : %d", state);
+            rt_thread_mdelay(3000);
+            rt_hw_cpu_reset();
             message->length = 0;
             spi_handle->State = HAL_SPI_STATE_READY;
         }

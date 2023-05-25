@@ -13,7 +13,6 @@
 #include "signal_led.h"
 #include "pin_config.h"
 
-
 #define DBG_TAG "led"
 #define DBG_LVL DBG_LOG
 #include <rtdbg.h>
@@ -32,6 +31,8 @@ static led_t *wifi_green_led = RT_NULL;
 static led_t *wifi_red_led = RT_NULL;
 static led_t *wifi_blue_led = RT_NULL;
 
+static led_t *ExAnt_green_led = RT_NULL;
+
 extern uint32_t Gateway_ID;
 
 //定义内存操作函数接口
@@ -39,92 +40,80 @@ led_mem_opreation_t led_mem_opreation;
 
 static void EXANT_Green_ON(void *param)
 {
-    ws2812b_green(1,1);
+    ws2812b_green(1, 1);
 }
-MSH_CMD_EXPORT(EXANT_Green_ON,EXANT_Green_ON);
 
 static void EXANT_Green_OFF(void *param)
 {
-    ws2812b_green(1,0);
+    ws2812b_green(1, 0);
 }
-MSH_CMD_EXPORT(EXANT_Green_OFF,EXANT_Green_OFF);
 
 static void gw_green_on(void *param)
 {
-    ws2812b_green(2,1);
+    ws2812b_green(2, 1);
 }
-MSH_CMD_EXPORT(gw_green_on,gw_green_on);
 
 static void gw_green_off(void *param)
 {
-    ws2812b_green(2,0);
+    ws2812b_green(2, 0);
 }
-MSH_CMD_EXPORT(gw_green_off,gw_green_off);
 
 static void gw_red_on(void *param)
 {
-    ws2812b_red(2,1);
+    ws2812b_red(2, 1);
 }
-MSH_CMD_EXPORT(gw_red_on,gw_red_on);
 
 static void gw_red_off(void *param)
 {
-    ws2812b_red(2,0);
+    ws2812b_red(2, 0);
 }
-MSH_CMD_EXPORT(gw_red_off,gw_red_off);
 
 static void gw_blue_on(void *param)
 {
-    ws2812b_blue(2,1);
+    ws2812b_blue(2, 1);
 }
-MSH_CMD_EXPORT(gw_blue_on,gw_blue_on);
 
 static void gw_blue_off(void *param)
 {
-    ws2812b_blue(2,0);
+    ws2812b_blue(2, 0);
 }
-MSH_CMD_EXPORT(gw_blue_off,gw_blue_off);
 
 static void off_red_on(void *param)
 {
-    ws2812b_red(0,1);
+    ws2812b_red(0, 1);
 }
-MSH_CMD_EXPORT(off_red_on,off_red_on);
 
 static void off_red_off(void *param)
 {
-    ws2812b_red(0,0);
+    ws2812b_red(0, 0);
 }
-MSH_CMD_EXPORT(off_red_off,off_red_off);
 
 void on_green_on(void *param)
 {
-    ws2812b_green(0,1);
+    ws2812b_green(0, 1);
 }
-MSH_CMD_EXPORT(on_green_on,on_green_on);
 
 static void on_green_off(void *param)
 {
-    ws2812b_green(0,0);
+    ws2812b_green(0, 0);
 }
-MSH_CMD_EXPORT(on_green_off,on_green_off);
 
 static void beep_on(void *param)
 {
-    rt_pin_mode(BUZZER,PIN_MODE_OUTPUT);
-    rt_pin_write(BUZZER,PIN_HIGH);
+    rt_pin_mode(BUZZER, PIN_MODE_OUTPUT);
+    rt_pin_write(BUZZER, PIN_HIGH);
 }
 
 static void beep_close(void *param)
 {
-    rt_pin_mode(BUZZER,PIN_MODE_OUTPUT);
-    rt_pin_write(BUZZER,PIN_LOW);
+    rt_pin_mode(BUZZER, PIN_MODE_OUTPUT);
+    rt_pin_write(BUZZER, PIN_LOW);
 }
 
 static void led_run(void *parameter)
 {
     ws2812b_init();
-    while(1)
+    while (1)
     {
         rt_thread_mdelay(LED_TICK_TIME);
         led_ticks();
@@ -136,10 +125,12 @@ void loss_led_start(void)
 {
     led_start(loss_led);
 }
+
 void loss_led_stop(void)
 {
     led_stop(loss_led);
 }
+
 void beep_three_times(void)
 {
     led_start(beep_three);
@@ -151,87 +142,100 @@ void wifi_communication_blink(void)
 }
 void wifi_led(uint8_t num)
 {
-    switch(num)
+    switch (num)
     {
-    case 0://无设备
+    case 0: //无设备
         led_stop(wifi_red_led);
         led_stop(wifi_green_led);
         break;
-    case 1://心跳成功
+    case 1: //心跳成功
         led_stop(wifi_red_led);
-        led_set_mode(wifi_green_led, LOOP_PERMANENT,"200,0,");
+        led_set_mode(wifi_green_led, LOOP_PERMANENT, "200,0,");
         led_start(wifi_green_led);
         break;
-    case 2://心跳失败
+    case 2: //心跳失败
         led_stop(wifi_green_led);
-        led_set_mode(wifi_red_led, LOOP_PERMANENT,"200,0,");
+        led_set_mode(wifi_red_led, LOOP_PERMANENT, "200,0,");
         led_start(wifi_red_led);
         break;
     }
 }
 void led_valve_fail(void)
 {
-    led_set_mode(beep, 3,"200,200,");
+    led_set_mode(beep, 3, "200,200,");
     led_start(beep);
-    led_set_mode(off_red, 3,"200,200,");
+    led_set_mode(off_red, 3, "200,200,");
     led_start(off_red);
 }
 void led_notice_once(void)
 {
-    led_set_mode(beep, 1,"200,0,");
+    led_set_mode(beep, 1, "200,0,");
     led_start(beep);
-    led_set_mode(off_red, 1,"200,0,");
+    led_set_mode(off_red, 1, "200,0,");
     led_start(off_red);
 }
 void led_factory_start(void)
 {
-    led_set_mode(beep, 5,"200,200,");
+    led_set_mode(beep, 5, "200,200,");
     led_start(beep);
-    led_set_mode(off_red, 5,"200,200,");
+    led_set_mode(off_red, 5, "200,200,");
     led_start(off_red);
 }
 void led_learn_start(void)
 {
-    led_set_mode(beep, 5,"200,200,");
+    led_set_mode(beep, 5, "200,200,");
     led_start(beep);
-    led_set_mode(off_red, 75,"200,200,");
+    led_set_mode(off_red, 75, "200,200,");
     led_start(off_red);
 }
 void led_slave_low_start(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"200,5000,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,5000,");
     led_start(beep);
-    led_set_mode(off_red, LOOP_PERMANENT,"200,5000,");
+    led_set_mode(off_red, LOOP_PERMANENT, "200,5000,");
     led_start(off_red);
 }
 void led_moto_fail_start(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"200,200,200,200,200,200,200,200,200,200,200,10000,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,200,200,200,200,200,200,200,200,200,200,10000,");
     led_start(beep);
-    led_set_mode(off_red, LOOP_PERMANENT,"200,200,200,200,200,200,200,200,200,200,200,10000,");
+    led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,200,200,200,200,200,200,200,200,10000,");
     led_start(off_red);
 }
+MSH_CMD_EXPORT(led_moto_fail_start, led_moto_fail_start);
+
+
+void led_moto_fail_stop(void)
+{
+    led_stop(beep);
+    led_stop(off_red);
+}
+MSH_CMD_EXPORT(led_moto_fail_stop, led_moto_fail_stop);
+
 void led_offline_start(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"200,200,200,200,200,200,200,5000,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,200,200,200,200,200,200,5000,");
     led_start(beep);
-    led_set_mode(off_red, LOOP_PERMANENT,"200,200,200,200,200,200,200,5000,");
+    led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,200,200,200,200,5000,");
     led_start(off_red);
 }
+
+
 void led_master_lost_start(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"200,200,200,5000,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,200,200,5000,");
     led_start(beep);
-    led_set_mode(off_red, LOOP_PERMANENT,"200,200,200,5000,");
+    led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,5000,");
     led_start(off_red);
 }
 void led_water_alarm_start(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"200,200,200,200,200,5000,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,200,200,200,200,5000,");
     led_start(beep);
-    led_set_mode(off_red, LOOP_PERMANENT,"200,200,200,200,200,5000,");
+    led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,200,200,5000,");
     led_start(off_red);
 }
+
 void beep_stop(void)
 {
     led_stop(beep);
@@ -251,16 +255,19 @@ void learn_fail_ring(void)
 }
 void led_relearn(void)
 {
-    led_set_mode(off_red, 75,"200,200,");
+    led_set_mode(off_red, 75, "200,200,");
     led_start(off_red);
 }
 void led_ntc_alarm(void)
 {
-    led_set_mode(beep, LOOP_PERMANENT,"50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
+    led_set_mode(beep, LOOP_PERMANENT,
+            "50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
                             ,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,2000,");
-    led_set_mode(off_red, LOOP_PERMANENT,"50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
+    led_set_mode(off_red, LOOP_PERMANENT,
+            "50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
                             ,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,2000,");
-    led_set_mode(on_green, LOOP_PERMANENT,"50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
+    led_set_mode(on_green, LOOP_PERMANENT,
+            "50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50\
                             ,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,2000,");
     led_start(off_red);
     led_start(on_green);
@@ -269,18 +276,18 @@ void led_ntc_alarm(void)
 void led_factory_warn(void)
 {
     led_stop(on_green);
-    led_set_mode(beep, 1,"200,0,");
-    led_set_mode(off_red, 1,"200,0,");
+    led_set_mode(beep, 1, "200,0,");
+    led_set_mode(off_red, 1, "200,0,");
     led_start(off_red);
     led_start(beep);
 }
 void led_factory_normal(void)
 {
     led_stop(off_red);
-    led_set_mode(beep, LOOP_PERMANENT,"200,0,");
-    led_set_mode(on_green, LOOP_PERMANENT,"200,0,");
-    led_set_mode(wifi_green_led, LOOP_PERMANENT,"200,0,");
-    led_set_mode(wifi_red_led, LOOP_PERMANENT,"200,0,");
+    led_set_mode(beep, LOOP_PERMANENT, "200,0,");
+    led_set_mode(on_green, LOOP_PERMANENT, "200,0,");
+    led_set_mode(wifi_green_led, LOOP_PERMANENT, "200,0,");
+    led_set_mode(wifi_red_led, LOOP_PERMANENT, "200,0,");
     led_start(beep);
     led_start(on_green);
     led_start(wifi_green_led);
@@ -289,7 +296,7 @@ void led_factory_normal(void)
 void led_valve_on(void)
 {
     led_stop(off_red);
-    led_set_mode(on_green,LOOP_PERMANENT,"200,0,");
+    led_set_mode(on_green, LOOP_PERMANENT, "200,0,");
     led_start(on_green);
     led_start(key_beep);
 }
@@ -298,13 +305,32 @@ void led_valve_off(void)
     led_stop(on_green);
     led_start(key_beep);
 }
+
 void led_warn_off(void)
 {
     led_stop(off_red);
 }
+
+void led_all_off(void)
+{
+    led_stop(ExAnt_green_led);
+    led_stop(on_green);
+    led_stop(off_red);
+}
+
+void led_ExAnt_on(void)
+{
+    led_start(ExAnt_green_led);
+}
+
+void led_ExAnt_off(void)
+{
+    led_stop(ExAnt_green_led);
+}
+
 int led_Init(void)
 {
-    led_mem_opreation.malloc_fn = (void* (*)(size_t))rt_malloc;
+    led_mem_opreation.malloc_fn = (void* (*)(size_t)) rt_malloc;
     led_mem_opreation.free_fn = rt_free;
     led_set_mem_operation(&led_mem_opreation);
 
@@ -343,15 +369,15 @@ int led_Init(void)
     wifi_blue_led = led_create(gw_blue_on, gw_blue_off, NULL);
     led_set_mode(wifi_blue_led, 1, "50,0,");
 
-    rt_thread_t tid = RT_NULL;
-    tid = rt_thread_create("signal_led",
-                            led_run,
-                            RT_NULL,
-                            512,
-                            RT_THREAD_PRIORITY_MAX/2,
-                            100);
-    if (tid != RT_NULL)
-       rt_thread_startup(tid);
+    ExAnt_green_led = led_create(EXANT_Green_ON, EXANT_Green_OFF, NULL);
+    led_set_mode(ExAnt_green_led, LOOP_PERMANENT, "200,0,");
 
+    rt_thread_t tid = RT_NULL;
+    tid = rt_thread_create("signal_led", led_run,
+    RT_NULL, 512,
+    RT_THREAD_PRIORITY_MAX / 2, 100);
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+    led_all_off();
     return RT_EOK;
 }

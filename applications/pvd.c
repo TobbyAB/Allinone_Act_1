@@ -65,21 +65,18 @@ void PVD_Open(uint8_t level)
     LOG_D("Enable the PVD Output\r\n");
     HAL_PWR_EnablePVD();
 }
-MSH_CMD_EXPORT(PVD_Open, PVD_Open);
 
 void PVD_Close(void)
 {
     LOG_D("Disable the PVD Output\r\n");
     HAL_PWR_DisablePVD();
 }
-MSH_CMD_EXPORT(PVD_Close, PVD_Close);
 
 uint8_t Get_Bat_Level(void)
 {
     return Bat_Level;
 }
 
-MSH_CMD_EXPORT(Get_Bat_Level, Get_Bat_Level);
 /*******************
 PVD_Open
 PVD_Close

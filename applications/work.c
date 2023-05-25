@@ -91,7 +91,7 @@ uint8_t Get_Peak_LOSS_Level(void)
     }
     else
     {
-        return 0;
+        return 1;
     }
 }
 
@@ -105,7 +105,7 @@ void WaterScan_Callback(void *parameter)
     {
         Peak_ON_Level = Get_Peak_ON_Level();
         Peak_Loss_Level = Get_Peak_LOSS_Level();
-        if (Peak_Loss_Level != 0)
+        if (Peak_Loss_Level == 0)
         {
             WarningNowStatus = 1; //测水线掉落
             LOG_W("Peak_Loss is active\r\n");
