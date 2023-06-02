@@ -16,7 +16,7 @@
 //#include "led.h"
 
 #define DBG_TAG "device"
-#define DBG_LVL DBG_LOG
+#define DBG_LVL DBG_INFO
 #include <rtdbg.h>
 
 rt_sem_t KEY2_ON_Sem = RT_NULL;
@@ -190,7 +190,7 @@ void RF_Switch_Inside_Pin_Init(void)
     Flash_Key_Change(55556666, 0);
     rt_pin_write(ANT_EXT, ANT_SW_Status);
     rt_pin_write(ANT_INT, !ANT_SW_Status);
-    LOG_I("RF Switch Inside Ant  \r\n");
+    LOG_D("RF Switch Inside Ant  \r\n");
 }
 
 void RF_Switch_Outside_Pin_Init(void)
@@ -230,7 +230,7 @@ void DC_Detect(void)
     if (DC_Status_Temp != DC_Status)
     {
         DC_Status = DC_Status_Temp;
-        LOG_I("Now DC_Status is %d \r\n", DC_Status_Temp);
+        LOG_D("Now DC_Status is %d \r\n", DC_Status_Temp);
         if (DC_Status_Temp == 1)
         {
             DC_ON_Sem_Release();
@@ -249,7 +249,8 @@ void Hand_Switch_Detect(void)
     {
         Hand_Switch_Status = Hand_Switch_Status_Temp;
         LOG_I("Now Hand_Switch_Status is %d \r\n", Hand_Switch_Status_Temp);
-        if (Hand_Switch_Status_Temp == 0)
+        led_moto_fail_stop();
+        if ((Hand_Switch_Status_Temp == 0) && (rt_pin_read(ON_POS) != 0))
         {
             Moto_Open(NormalOpen);
         }
@@ -283,7 +284,7 @@ void button_task_entry(void *parameter)
         DC_Detect();
         Hand_Switch_Detect();
         Button_Process();
-        rt_thread_mdelay(10);
+        rt_thread_mdelay(12);
     }
 }
 void Button_Init(void)

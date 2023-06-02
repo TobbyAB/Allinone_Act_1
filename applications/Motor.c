@@ -22,17 +22,16 @@
 //#include "work.h"
 
 #define DBG_TAG "motor"
-#define DBG_LVL DBG_LOG
+#define DBG_LVL DBG_INFO
 #include <rtdbg.h>
-
-
 
 rt_timer_t ON_Pos_Detect_Timer = RT_NULL;
 rt_timer_t OFF_Pos_Detect_Timer = RT_NULL;
 rt_timer_t In_ON_Pos_Detect_Timer = RT_NULL;
 rt_timer_t In_OFF_Pos_Detect_Timer = RT_NULL;
 
-rt_timer_t Actuator_SelfCheck_Timer = RT_NULL;
+rt_timer_t Actuator_SelfCheck_Front_Timer = RT_NULL;
+rt_timer_t Actuator_SelfCheck_Back_Timer = RT_NULL;
 rt_timer_t Moto_Detect_Timer = RT_NULL;
 
 uint8_t Actuator_Open_Flag;
@@ -51,9 +50,8 @@ void ON_Pos_Detect_Timer_Callback(void *parameter)
 {
     if (rt_pin_read(ON_POS) == 0)
     {
-        LOG_I("The motor in the ON position");
+        LOG_D("The motor in the ON position");
         led_moto_fail_stop();
-        //rt_thread_mdelay(500);
         Actuator_Stop();
     }
 }
@@ -62,9 +60,8 @@ void OFF_Pos_Detect_Timer_Callback(void *parameter)
 {
     if (rt_pin_read(OFF_POS) == 0)
     {
-        LOG_I("The motor in the OFF position");
+        LOG_D("The motor in the OFF position");
         led_moto_fail_stop();
-        //rt_thread_mdelay(500);
         Actuator_Stop();
     }
 }
@@ -93,22 +90,18 @@ void In_OFF_Pos_Detect_Timer_Callback(void *parameter)
     }
 }
 
-void Actuator_SelfCheck_Timer_Callback(void *parameter)
+void Actuator_SelfCheck_Front_Timer_Callback(void *parameter)
 {
     if (rt_pin_read(ON_POS) == 1)
     {
 
-        Actuator_Open();
-
-        WarUpload_GW(1, 0, 2, 0); //MOTO1解除报警
-        Valve_Alarm_Flag = 0;
-        Moto1_Fail_FLag = 0;
-
-        rt_thread_mdelay(5000);
-        Key_IO_Init();
-        WaterScan_IO_Init();
-
-        LOG_D("Actuator_SelfCheck is success");
+        if (rt_pin_read(HAND_SWITCH_DET) == 0)
+        {
+            Actuator_Open();
+            LOG_D("Actuator is Actuator Open");
+        }
+        rt_timer_start(Actuator_SelfCheck_Back_Timer);
+        LOG_D("Actuator_Front_SelfCheck is success");
     }
     else
     {
@@ -120,7 +113,36 @@ void Actuator_SelfCheck_Timer_Callback(void *parameter)
         Key_IO_Init();
         WaterScan_IO_Init();
 
-        LOG_D("Actuator Self-test is failure");
+        LOG_D("Actuator Front Self-test is failure");
+    }
+}
+
+void Actuator_SelfCheck_Back_Timer_Callback(void *parameter)
+{
+    if (rt_pin_read(ON_POS) == 0)
+    {
+        WarUpload_GW(1, 0, 2, 0); //MOTO1解除报警
+        Valve_Alarm_Flag = 0;
+        Moto1_Fail_FLag = 0;
+
+        //rt_thread_mdelay(5000);
+
+        Key_IO_Init();
+        WaterScan_IO_Init();
+
+        LOG_D("Actuator Back SelfCheck is success");
+    }
+    else
+    {
+        Warning_Enable_Num(6);
+        Valve_Alarm_Flag = 1;
+        Moto1_Fail_FLag = 1;
+
+        Actuator_Stop();
+        Key_IO_Init();
+        WaterScan_IO_Init();
+
+        LOG_D("Actuator Back Self-test is failure");
     }
 }
 
@@ -129,8 +151,6 @@ void Moto_Detect_Timer_Callback(void *parameter)
     LOG_D("Moto_Detect_Timer_Callback\r\n");
     Moto_Detect();
 }
-
-
 
 void Moto_Init(void)
 {
@@ -146,8 +166,12 @@ void Moto_Init(void)
     OFF_Pos_Detect_Timer = rt_timer_create("OFF_Pos_Detect_Timer", OFF_Pos_Detect_Timer_Callback, RT_NULL, 10,
     RT_TIMER_FLAG_PERIODIC | RT_TIMER_FLAG_SOFT_TIMER);
 
-    Actuator_SelfCheck_Timer = rt_timer_create("Actuator_SelfCheck_Timer", Actuator_SelfCheck_Timer_Callback, RT_NULL,
-            6000,
+    Actuator_SelfCheck_Front_Timer = rt_timer_create("Actuator_SelfCheck_Front_Timer",
+            Actuator_SelfCheck_Front_Timer_Callback, RT_NULL, 6000,
+            RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+
+    Actuator_SelfCheck_Back_Timer = rt_timer_create("Actuator_SelfCheck_Back_Timer",
+            Actuator_SelfCheck_Back_Timer_Callback, RT_NULL, 10000,
             RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 
     In_ON_Pos_Detect_Timer = rt_timer_create("In_ON_Pos_Detect_Timer", In_ON_Pos_Detect_Timer_Callback, RT_NULL, 20000,
@@ -183,8 +207,15 @@ void Moto_Detect(void)
         Key_IO_DeInit();
         WaterScan_IO_DeInit();
 
-        Motor_Close();
-        rt_timer_start(Actuator_SelfCheck_Timer);
+        if (rt_pin_read(HAND_SWITCH_DET) != 0)
+        {
+            LOG_D("HAND SWITCH is pulled up\r\n");
+        }
+        else
+        {
+            Motor_Close();
+        }
+        rt_timer_start(Actuator_SelfCheck_Front_Timer);
     }
 }
 
@@ -194,7 +225,6 @@ void Motor_Open(void)
 {
     rt_pin_write(MOT_IN1, 0);
     rt_pin_write(MOT_IN2, 1);
-//LOG_D("Now Motor start to open");
 }
 
 void Motor_Close(void)
@@ -209,15 +239,13 @@ void Motor_Stop(void)
     rt_pin_write(MOT_IN2, 0);
     LOG_D("Now Motor start to Stop");
 }
-MSH_CMD_EXPORT(Motor_Stop, Motor_Stop);
 
 void Motor_Pluse(void)
 {
     rt_pin_write(MOT_IN1, 1);
     rt_pin_write(MOT_IN2, 1);
-LOG_D("Now Motor start to Pluse");
+    LOG_D("Now Motor start to Pluse");
 }
-MSH_CMD_EXPORT(Motor_Pluse, Motor_Pluse);
 
 void Clean_Actuator_Timer(void)
 {
@@ -225,7 +253,7 @@ void Clean_Actuator_Timer(void)
     rt_timer_stop(In_OFF_Pos_Detect_Timer);
     rt_timer_stop(ON_Pos_Detect_Timer);
     rt_timer_stop(In_ON_Pos_Detect_Timer);
-//LOG_D("Clean Actuator Timer");
+    LOG_D("Clean Actuator Timer");
 }
 
 void Actuator_Open(void)
@@ -234,7 +262,7 @@ void Actuator_Open(void)
     Motor_Open();
     rt_timer_start(ON_Pos_Detect_Timer);
     rt_timer_start(In_ON_Pos_Detect_Timer);
-    LOG_I("Now Actuator command to open");
+    LOG_D("Now Actuator command to open");
 }
 
 void Actuator_Close(void)
@@ -243,14 +271,14 @@ void Actuator_Close(void)
     Motor_Close();
     rt_timer_start(OFF_Pos_Detect_Timer);
     rt_timer_start(In_OFF_Pos_Detect_Timer);
-    LOG_I("Now Actuator command to close");
+    LOG_D("Now Actuator command to close");
 }
 
 void Actuator_Stop(void)
 {
     Clean_Actuator_Timer();
     Motor_Stop();
-    LOG_I("Now Actuator is stop");
+    LOG_D("Now Actuator is stop");
 }
 
 void Actuator_Aging(void)
@@ -270,7 +298,7 @@ void Actuator_Aging(void)
 
 void Moto_InitOpen(uint8_t ActFlag)
 {
-    LOG_I("Moto Open Init Now is is %d , act is %d\r\n", Global_Device.LastFlag, ActFlag);
+    LOG_D("Moto Open Init Now is is %d , act is %d\r\n", Global_Device.LastFlag, ActFlag);
     if ((Global_Device.LastFlag == OtherOff && ActFlag == OtherOpen) || (Global_Device.LastFlag != OtherOff))
     {
         LOG_D("Moto is Open\r\n");

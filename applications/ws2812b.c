@@ -123,8 +123,6 @@ void ws2812b_init(void)
     RGB_SetColor(2,BLACK);
     //HAL_TIM_PWM_Start_DMA(&tim2_handle, TIM_CHANNEL_1, (uint32_t *)Pixel_Buf,(Pixel_NUM + 1)*24);
 }
-MSH_CMD_EXPORT(ws2812b_init,ws2812b_init);
-
 
 void ws2812b_green(uint8_t id,uint8_t value)
 {

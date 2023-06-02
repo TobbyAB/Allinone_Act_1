@@ -188,7 +188,7 @@ void WaterScan_Init(void)
     WaterScan_t = rt_thread_create("WaterScan", WaterScan_Callback, RT_NULL, 2048, 10, 10);
     if (WaterScan_t != RT_NULL)
     {
-        rt_thread_startup(WaterScan_t);
+        //rt_thread_startup(WaterScan_t);
     }
 }
 

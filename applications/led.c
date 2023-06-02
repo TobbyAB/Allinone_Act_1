@@ -197,20 +197,18 @@ void led_slave_low_start(void)
 }
 void led_moto_fail_start(void)
 {
+    led_stop(on_green);
     led_set_mode(beep, LOOP_PERMANENT, "200,200,200,200,200,200,200,200,200,200,200,10000,");
     led_start(beep);
     led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,200,200,200,200,200,200,200,200,10000,");
     led_start(off_red);
 }
-MSH_CMD_EXPORT(led_moto_fail_start, led_moto_fail_start);
-
 
 void led_moto_fail_stop(void)
 {
     led_stop(beep);
     led_stop(off_red);
 }
-MSH_CMD_EXPORT(led_moto_fail_stop, led_moto_fail_stop);
 
 void led_offline_start(void)
 {
@@ -220,7 +218,6 @@ void led_offline_start(void)
     led_start(off_red);
 }
 
-
 void led_master_lost_start(void)
 {
     led_set_mode(beep, LOOP_PERMANENT, "200,200,200,5000,");
@@ -228,6 +225,7 @@ void led_master_lost_start(void)
     led_set_mode(off_red, LOOP_PERMANENT, "200,200,200,5000,");
     led_start(off_red);
 }
+
 void led_water_alarm_start(void)
 {
     led_set_mode(beep, LOOP_PERMANENT, "200,200,200,200,200,5000,");
@@ -242,6 +240,7 @@ void beep_stop(void)
 }
 void key_down(void)
 {
+    led_moto_fail_stop();
     led_start(key_beep);
     led_start(key_led);
 }

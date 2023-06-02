@@ -36,7 +36,7 @@ int Flash_Init(void)
     if (RT_NULL == fm25q16)
     {
         LOG_E("sfud fail\r\n");
-        rt_thread_mdelay(3000);
+        rt_thread_mdelay(2000);
         rt_hw_cpu_reset();
         return RT_ERROR;
     };

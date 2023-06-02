@@ -70,14 +70,20 @@ void Key_Reponse_Callback(void *parameter)
 
         DC_On_Status = rt_sem_take(DC_ON_Sem, 0);
         DC_Off_Status = rt_sem_take(DC_OFF_Sem, 0);
-
         if (DC_On_Status == RT_EOK) //DC ON
         {
+            if (rt_pin_read(HAND_SWITCH_DET) != 0)
+            {
+                LOG_D("HAND SWITCH is pulled up\r\n");
+                beep_once();
+                continue;
+            }
             switch (GetNowStatus())
             {
             case Close:
                 if (Last_Close_Flag == 0)
                 {
+                    led_moto_fail_stop();
                     Moto_Open(NormalOpen);
                 }
                 else
@@ -87,6 +93,7 @@ void Key_Reponse_Callback(void *parameter)
                 LOG_D("Valve Open With ON\r\n");
                 break;
             case Open:
+
                 beep_once();
                 LOG_D("Valve Already Open With ON\r\n");
                 break;
@@ -124,6 +131,12 @@ void Key_Reponse_Callback(void *parameter)
 
         else if (DC_Off_Status == RT_EOK) //DC OFF
         {
+            if (rt_pin_read(HAND_SWITCH_DET) != 0)
+            {
+                LOG_D("HAND SWITCH is pulled up\r\n");
+                beep_once();
+                continue;
+            }
             if (Factory_Flag)
             {
                 //Stop_Factory_Cycle();
@@ -146,6 +159,7 @@ void Key_Reponse_Callback(void *parameter)
                     LOG_D("Valve Already Close With OFF\r\n");
                     break;
                 case Open:
+
                     key_down();
                     Last_Close_Flag = 0;
                     Moto_Close(NormalOff);
@@ -195,11 +209,18 @@ void Key_Reponse_Callback(void *parameter)
 
         else if (K0_Status == RT_EOK) //ON
         {
+            if (rt_pin_read(HAND_SWITCH_DET) != 0)
+            {
+                LOG_D("HAND SWITCH is pulled up\r\n");
+                beep_once();
+                continue;
+            }
             switch (GetNowStatus())
             {
             case Close:
                 if (Last_Close_Flag == 0)
                 {
+                    led_moto_fail_stop();
                     Moto_Open(NormalOpen);
                 }
                 else
@@ -245,6 +266,12 @@ void Key_Reponse_Callback(void *parameter)
         }
         else if (K1_Status == RT_EOK) //OFF
         {
+            if (rt_pin_read(HAND_SWITCH_DET) != 0)
+            {
+                LOG_D("HAND SWITCH is pulled up\r\n");
+                beep_once();
+                continue;
+            }
             if (Factory_Flag)
             {
                 //Stop_Factory_Cycle();
@@ -267,6 +294,7 @@ void Key_Reponse_Callback(void *parameter)
                     LOG_D("Valve Already Close With OFF\r\n");
                     break;
                 case Open:
+
                     key_down();
                     Last_Close_Flag = 0;
                     Moto_Close(NormalOff);
@@ -350,7 +378,7 @@ void Key_Reponse_Callback(void *parameter)
                 LOG_D("Now in Warining Mode\r\n");
             }
         }
-        rt_thread_mdelay(10);
+        rt_thread_mdelay(150);
     }
 }
 
@@ -361,9 +389,9 @@ void Learn_Timer_Callback(void *parameter)
 }
 void Key_Reponse(void)
 {
-    key_response_t = rt_thread_create("key_response_t", Key_Reponse_Callback, RT_NULL, 2048, 10, 10);
+    key_response_t = rt_thread_create("key_response_t", Key_Reponse_Callback, RT_NULL, 2560, 10, 10);
     if (key_response_t != RT_NULL)
         rt_thread_startup(key_response_t);
     Learn_Timer = rt_timer_create("Learn_Timer", Learn_Timer_Callback, RT_NULL, 30 * 1000,
-            RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
+    RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
 }

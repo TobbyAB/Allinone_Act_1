@@ -18,6 +18,7 @@
 extern uint8_t Bat_Level;
 int main(void)
 {
+
     Flash_Init();
     ADC_Init();
     led_Init();
@@ -30,14 +31,16 @@ int main(void)
     WaterScan_Init();
     Gateway_Init();
 
-//    int count = 1;
-//    int aging_count = 1000;
-
+#ifdef AGING1
+    int count = 1;
+    int aging_count = 1000;
+#endif
     while (1)
     {
         rt_thread_mdelay(1000);
 
 #ifdef AGING1
+
         if (count <= aging_count)
         {
             Actuator_Aging();
